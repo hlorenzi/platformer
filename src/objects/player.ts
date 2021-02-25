@@ -3,12 +3,14 @@ import { Object } from "./_object"
 import { Camera } from "./camera"
 import ModelBuilder from "../util/modelBuilder"
 import Vec3 from "../math/vec3"
+import * as Geometry from "../math/geometry"
 import { Stage1 } from "./stage1"
+import GfxModel from "../gl/model"
 
 
 export class Player extends Object
 {
-    model!: any
+    model!: GfxModel
     posPrev: Vec3 = new Vec3(0, 0, 0)
     speed: Vec3 = new Vec3(0, 0, 0)
     radius: number = 0.15
@@ -50,7 +52,7 @@ export class Player extends Object
 
         const forward = camera.lookAt.sub(camera.position).withZ(0).normalized()
         const sideways = new Vec3(forward.y, -forward.x, 0)
-        const accel = 0.015
+        const accel = 0.005
         const decel = 0.015
         const maxSpeed = 0.05
 
@@ -98,6 +100,8 @@ export class Player extends Object
 
     handleJump()
     {
+        return
+
         this.speed = this.speed.add(new Vec3(0, 0, 0.01))
 
         if (this.director.keysDown.has(" "))
@@ -116,10 +120,12 @@ export class Player extends Object
         //if (this.position.z > -1)
         //    this.position = this.position.withZ(-1)
 
-        this.position = stage.collision.solve(
+        const solved = stage.collision.solve(
             this.posPrev,
             this.position,
             this.radius)
+
+        this.position = solved.position
 
         this.speed = this.speed.withZ(this.position.z - this.posPrev.z)
     }
@@ -127,13 +133,55 @@ export class Player extends Object
 
     render()
     {
-        this.director.scene.pushTranslationScale(this.position, this.scale)
+        /*this.director.scene.pushTranslationScale(this.position, this.scale)
 
         this.director.scene.drawModel(
             this.model,
             this.director.scene.materialColor,
             [1, 1, 1, 1])
 
+        this.director.scene.popTranslationScale()*/
+
+        
+        const stage = this.director.objectFind(Stage1)
+        if (!stage)
+            return
+
+        const fromPos = this.position
+        const toPos = fromPos.add(new Vec3(0, 0, 1.5))
+        const solved = stage.collision.solve(fromPos, toPos, this.radius)
+        
+        this.director.scene.pushTranslationScale(fromPos, this.scale)
+
+        this.director.scene.drawModel(
+            this.model,
+            this.director.scene.materialColor,
+            [1, 0, 0, 1])
+
         this.director.scene.popTranslationScale()
+
+        this.director.scene.pushTranslationScale(toPos, this.scale)
+
+        this.director.scene.drawModel(
+            this.model,
+            this.director.scene.materialColor,
+            [1, 0, 0.5, 1])
+
+        this.director.scene.popTranslationScale()
+
+        this.director.scene.pushTranslationScale(solved.position, this.scale)
+
+        this.director.scene.drawModel(
+            this.model,
+            this.director.scene.materialColor,
+            [1, 0, 1, 1])
+
+        this.director.scene.popTranslationScale()
+        
+        this.director.scene.drawArrow(
+            fromPos,
+            toPos,
+            0.025,
+            [1, 0, 1, 1])
     }
 }

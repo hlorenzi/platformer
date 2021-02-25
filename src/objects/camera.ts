@@ -48,7 +48,7 @@ export class Camera extends Object
         const goalDistance = 5
 
         const dirToLookat = this.lookAt.sub(this.position).normalized().withZ(0).scale(goalDistance)
-        const goalPos = this.lookAt.sub(dirToLookat).add(new Vec3(0, 0, -goalDistance * 0.45))
+        const goalPos = this.lookAt.sub(dirToLookat).add(new Vec3(0, 0, 0.5 -goalDistance * 0.45))
 
         this.position = goalPos
     }

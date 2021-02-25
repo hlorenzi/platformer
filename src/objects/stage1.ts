@@ -15,7 +15,7 @@ export class Stage1 extends Object
     init()
     {
         const builder = new ModelBuilder()
-        builder.addQuad(
+        /*builder.addQuad(
             new Vec3(-10, -10, 0),
             new Vec3( 10, -10, 0),
             new Vec3( 10,  10, 0),
@@ -25,12 +25,12 @@ export class Stage1 extends Object
             new Vec3(-2, -5, -1),
             new Vec3( 0, -5, 0),
             new Vec3( 0, -2, 0),
-            new Vec3(-2, -2, -1))
+            new Vec3(-2, -2, -1))*/
 
-        /*builder.addTri(
-            new Vec3(-10, -10, 0),
-            new Vec3(10, 0, 0),
-            new Vec3(0, 10, 0))*/
+        builder.addTri(
+            new Vec3( 0, -1, -0.5),
+            new Vec3( 2, -1, -0.75),
+            new Vec3( 1,  2, -0.5))
         builder.calculateNormals()
 
         this.model = builder.makeModel(this.director.gl)
@@ -56,6 +56,18 @@ export class Stage1 extends Object
                 tri.centroid.add(tri.normal.scale(0.1)),
                 0.025,
                 [1, 0, 0, 1])
+            
+            this.director.scene.drawArrow(
+                tri.v1,
+                tri.v1.add(tri.normal.scale(0.1)),
+                0.025,
+                [0, 0, 1, 1])
+            
+            this.director.scene.drawArrow(
+                tri.v2,
+                tri.v2.add(tri.normal.scale(0.1)),
+                0.025,
+                [0, 1, 0, 1])
             
             this.director.scene.drawArrow(
                 tri.v1to2Center,

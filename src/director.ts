@@ -5,6 +5,7 @@ import { Object } from "./objects/_object"
 import { Player } from "./objects/player"
 import { Camera } from "./objects/camera"
 import { Stage1 } from "./objects/stage1"
+import { Test } from "./objects/test"
 
 
 export class Director
@@ -56,14 +57,18 @@ export class Director
         this.objects = []
 
         const player = new Player()
-        player.position = new Vec3(1, 0, -2)
+        player.position = new Vec3(0, 0, -1.25)
         this.objectAdd(player)
 
         const camera = new Camera()
-        camera.position = new Vec3(1, 40, -40)
+        camera.position = new Vec3(2, 4, -4)
         this.objectAdd(camera)
 
         this.objectAdd(new Stage1())
+
+        /*const test = new Test()
+        test.position = new Vec3(1, 0, -0.5)
+        this.objectAdd(test)*/
     }
 
 

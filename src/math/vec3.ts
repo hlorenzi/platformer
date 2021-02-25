@@ -25,6 +25,12 @@ export default class Vec3
 	}
 
 
+	magnSqr()
+	{
+		return this.dot(this)
+	}
+
+
 	withZ(z: number)
 	{
 		return new Vec3(this.x, this.y, z)
@@ -135,6 +141,12 @@ export default class Vec3
 			Math.max(this.y, other.y),
 			Math.max(this.z, other.z))
 	}
+
+
+	projectT(other: Vec3)
+	{
+		return this.dot(other) / other.dot(other)
+	}
 	
 	
 	project(other: Vec3)
@@ -149,12 +161,21 @@ export default class Vec3
 	}
 	
 	
+	directionToLine(lineVector: Vec3, pointOnLine: Vec3)
+	{
+		const vec = this.sub(pointOnLine)
+		const proj = vec.sub(vec.project(lineVector))
+		
+		return proj
+	}
+	
+	
 	directionToPlane(planeNormal: Vec3, pointOnPlane: Vec3)
 	{
-		let vec = this.sub(pointOnPlane)
-		let proj = vec.projectOnPlane(planeNormal)
+		const vec = this.sub(pointOnPlane)
+		const proj = vec.projectOnPlane(planeNormal)
 		
-		return pointOnPlane.add(proj).sub(this)
+		return proj.add(pointOnPlane)
 	}
 	
 	
