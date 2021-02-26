@@ -66,9 +66,9 @@ export class Director
 
         this.objectAdd(new Stage1())
 
-        /*const test = new Test()
-        test.position = new Vec3(1, 0, -0.5)
-        this.objectAdd(test)*/
+        const test = new Test()
+        test.position = new Vec3(0, 0, -1.25)
+        //this.objectAdd(test)
     }
 
 

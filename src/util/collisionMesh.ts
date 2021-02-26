@@ -25,9 +25,16 @@ interface Triangle
 
 interface Resolution
 {
+	t: number
+	contact: Vec3
+}
+
+
+interface SolveResult
+{
+	collided: boolean
 	position: Vec3
 	contact: Vec3
-	normal: Vec3
 }
 
 
@@ -76,47 +83,83 @@ export default class CollisionMesh
 	}
 
 
-	solve(posPrev: Vec3, pos: Vec3, radius: number): Resolution
+	collideAndSlide(posPrev: Vec3, pos: Vec3, radius: number): SolveResult
 	{
-		let solvedPos = pos
+		let contact = pos
+		let collided = false
 
-		for (const tri of this.triangles)
+		for (let i = 0; i < 3; i++)
 		{
-			const newPos = this.solveTriangle(tri, posPrev, pos, radius)
-			if (!newPos)
-				continue
-			
-			return newPos
+			const solved = this.collide(posPrev, pos, radius)
+			posPrev = solved.position
+
+			if (!solved.collided)
+				break
+
+			collided = true
+			contact = solved.contact
+
+			const extraSpeed = pos.sub(solved.position)
+			const slideVec = extraSpeed.projectOnPlane(solved.position.sub(solved.contact))
+			pos = posPrev.add(slideVec)
 		}
 
 		return {
-			position: pos,
-			contact: pos,
-			normal: new Vec3(0, 0, 0),
+			position: posPrev,
+			contact,
+			collided,
 		}
 	}
 
 
-	solveTriangle(tri: Triangle, posPrev: Vec3, pos: Vec3, radius: number): Resolution | null
+	collide(posPrev: Vec3, pos: Vec3, radius: number): SolveResult
+	{
+		let t = 1
+		let contact = pos
+
+		for (const tri of this.triangles)
+		{
+			const triSolved = this.collideTriangle(tri, posPrev, pos, radius)
+			if (!triSolved)
+				continue
+
+			if (triSolved.t < t)
+			{
+				t = triSolved.t
+				contact = triSolved.contact
+			}
+		}
+
+		return {
+			position: posPrev.add(pos.sub(posPrev).scale(t)),
+			contact,
+			collided: t < 1,
+		}
+	}
+
+
+	collideTriangle(tri: Triangle, posPrev: Vec3, pos: Vec3, radius: number): Resolution | null
 	{
 		const radiusNormal = tri.normal.scale(radius)
 		const speed = pos.sub(posPrev)
 
 		const dotPrevNormal = tri.normal.dot(posPrev.sub(radiusNormal).sub(tri.v1))
 		//console.log("dotPrevNormal", dotPrevNormal)
-		if (dotPrevNormal < -0.01)
-			return null
+		//if (dotPrevNormal < 0)
+		//	return null
 
 		const dotNormal = tri.normal.dot(pos.sub(radiusNormal).sub(tri.v1))
 		//console.log("dotNormal", dotNormal)
-		if (dotNormal >= -0.01)
-			return null
+		//if (dotNormal > 0)
+		//	return null
+
+		const speedDotNormal = tri.normal.dot(speed)
 
 		let tPlane = Geometry.sweepSphereToPlane(posPrev, speed, radius, tri.v1, tri.normal)
-		const pPlane = posPrev.sub(tri.normal.scale(radius)).add(speed.scale(tPlane))
-		const dotPlane1 = pPlane.sub(tri.v1).dot(tri.v1to2Normal)
-		const dotPlane2 = pPlane.sub(tri.v2).dot(tri.v2to3Normal)
-		const dotPlane3 = pPlane.sub(tri.v3).dot(tri.v3to1Normal)
+		const contactPlane = posPrev.sub(tri.normal.scale(radius)).add(speed.scale(tPlane))
+		const dotPlane1 = contactPlane.sub(tri.v1).dot(tri.v1to2Normal)
+		const dotPlane2 = contactPlane.sub(tri.v2).dot(tri.v2to3Normal)
+		const dotPlane3 = contactPlane.sub(tri.v3).dot(tri.v3to1Normal)
 
 		if (dotPlane1 > 0 || dotPlane2 > 0 || dotPlane3 > 0)
 			tPlane = Infinity
@@ -131,67 +174,46 @@ export default class CollisionMesh
 
 		const t = Math.min(tPlane, tE1, tE2, tE3, tV1, tV2, tV3)
 
+		if (speedDotNormal >= 0 && (t < 0 || t > 1))
+			return null
+
+		if (speedDotNormal < 0 && (t < -0.5 || t > 1))
+			return null
+
 		if (!isFinite(t))
 			return null
-		
-		return {
-			position: posPrev.add(speed.scale(t)),
-			contact: posPrev.sub(tri.normal.scale(radius)).add(speed.scale(t)),
-			normal: tri.normal,
-		}
 
+		if (tPlane < tE1 && tPlane < tE2 && tPlane < tE3 && tPlane < tV1 && tPlane < tV2 && tPlane < tV3)
+			return { t: tPlane, contact: contactPlane }
 
-		/*
-			
-		const pointOnSurface = pos.sub(tri.v1)
-			.projectOnPlane(tri.normal)
-			.add(tri.v1)
-		
-		const solvedOnSurface = pointOnSurface.add(radiusNormal)
-
-		const vs = [tri.v1, tri.v2, tri.v3]
-		const vedge = [tri.v1to2, tri.v2to3, tri.v3to1]
-		const vnormal = [tri.v1to2Normal, tri.v2to3Normal, tri.v3to1Normal]
-
-		let inside = true
-		for (let v = 0; v < 3; v++)
+		if (tE1 < tE2 && tE1 < tE3 && tE1 < tV1 && tE1 < tV2 && tE1 < tV3)
 		{
-			const vsToPointOnSurface = pointOnSurface.sub(vs[v])
-
-			const dotEdge = vsToPointOnSurface.dot(vnormal[v])
-			if (dotEdge <= 0)
-				continue
-				
-			const distEdge = vsToPointOnSurface.sub(vsToPointOnSurface.project(vedge[v])).magn()
-			if (distEdge >= radius)
-				inside = false
+			const pE1 = posPrev.add(speed.scale(tE1))
+			return { t: tE1, contact: pE1.sub(pE1.directionToLine(tri.v1to2, tri.v1)) }
 		}
 
-		if (!inside)
-			return pos
-
-		for (let v = 0; v < 3; v++)
+		if (tE2 < tE3 && tE2 < tV1 && tE2 < tV2 && tE2 < tV3)
 		{
-			const vsToPointOnSurface = pointOnSurface.sub(vs[v])
-
-			const dotEdge = vsToPointOnSurface.dot(vnormal[v])
-			if (dotEdge <= 0)
-				continue
-				
-			const distEdge = vsToPointOnSurface.sub(vsToPointOnSurface.project(vedge[v])).magn()
-			if (distEdge >= radius)
-				continue
-
-			const distEdgeT = distEdge / radius
-			const edgeOffset = 1 - Math.sqrt(1 - distEdgeT * distEdgeT)
-			//console.log(tri.index, v, "edge", dotEdge)
-			//console.log(tri.index, v, "distEdge", distEdge)
-			//console.log(tri.index, v, "distEdgeT", distEdgeT)
-			//console.log(tri.index, v, "edgeOffset", edgeOffset)
-			return solvedOnSurface
-				.sub(tri.normal.scale(edgeOffset * radius))
+			const pE2 = posPrev.add(speed.scale(tE2))
+			return { t: tE2, contact: pE2.sub(pE2.directionToLine(tri.v2to3, tri.v2)) }
+		}
+		
+		if (tE3 < tV1 && tE3 < tV2 && tE3 < tV3)
+		{
+			const pE3 = posPrev.add(speed.scale(tE3))
+			return { t: tE3, contact: pE3.sub(pE3.directionToLine(tri.v3to1, tri.v3)) }
+		}
+		
+		if (tV1 < tV2 && tE3 < tV3)
+		{
+			return { t: tV1, contact: tri.v1 }
+		}
+		
+		if (tV2 < tV3)
+		{
+			return { t: tV2, contact: tri.v2 }
 		}
 
-		return solvedOnSurface*/
+		return { t: tV3, contact: tri.v3 }
 	}
 }

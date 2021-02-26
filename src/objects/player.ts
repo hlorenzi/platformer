@@ -100,8 +100,6 @@ export class Player extends Object
 
     handleJump()
     {
-        return
-
         this.speed = this.speed.add(new Vec3(0, 0, 0.01))
 
         if (this.director.keysDown.has(" "))
@@ -117,10 +115,7 @@ export class Player extends Object
         if (!stage)
             return
 
-        //if (this.position.z > -1)
-        //    this.position = this.position.withZ(-1)
-
-        const solved = stage.collision.solve(
+        const solved = stage.collision.collideAndSlide(
             this.posPrev,
             this.position,
             this.radius)
@@ -133,55 +128,13 @@ export class Player extends Object
 
     render()
     {
-        /*this.director.scene.pushTranslationScale(this.position, this.scale)
+        this.director.scene.pushTranslationScale(this.position, this.scale)
 
         this.director.scene.drawModel(
             this.model,
             this.director.scene.materialColor,
             [1, 1, 1, 1])
 
-        this.director.scene.popTranslationScale()*/
-
-        
-        const stage = this.director.objectFind(Stage1)
-        if (!stage)
-            return
-
-        const fromPos = this.position
-        const toPos = fromPos.add(new Vec3(0, 0, 1.5))
-        const solved = stage.collision.solve(fromPos, toPos, this.radius)
-        
-        this.director.scene.pushTranslationScale(fromPos, this.scale)
-
-        this.director.scene.drawModel(
-            this.model,
-            this.director.scene.materialColor,
-            [1, 0, 0, 1])
-
         this.director.scene.popTranslationScale()
-
-        this.director.scene.pushTranslationScale(toPos, this.scale)
-
-        this.director.scene.drawModel(
-            this.model,
-            this.director.scene.materialColor,
-            [1, 0, 0.5, 1])
-
-        this.director.scene.popTranslationScale()
-
-        this.director.scene.pushTranslationScale(solved.position, this.scale)
-
-        this.director.scene.drawModel(
-            this.model,
-            this.director.scene.materialColor,
-            [1, 0, 1, 1])
-
-        this.director.scene.popTranslationScale()
-        
-        this.director.scene.drawArrow(
-            fromPos,
-            toPos,
-            0.025,
-            [1, 0, 1, 1])
     }
 }

@@ -33,7 +33,9 @@ export function sweepSphereToPlane(
 		return Infinity
 
 	const t = -(d + m * y + n * x + o * z - r) / div
-		
+	//if (t < 0 || t > 1)
+	//	return Infinity
+
 	return t
 }
 
@@ -88,7 +90,7 @@ export function sweepSphereToLine(
 
 	const root1 =
 		2 * m * m * u * x +
-		2 * m * m * w * z +
+		2 * m * m * w * z -
 		2 * m * n * u * y -
 		2 * m * n * v * x -
 		2 * m * o * v * z -
@@ -129,25 +131,18 @@ export function sweepSphereToLine(
 
 	const root = Math.sqrt(rootInner)
 
-	const outer2 =
-		m * m * u * u +
-		m * m * w * w -
-		2 * m * n * u * v -
-		2 * m * o * v * w +
-		n * n * v * v +
-		n * n * w * w -
-		2 * n * o * u * w +
-		o * o * u * u +
-		o * o * v * v
-
-	const div = (2 * outer2)
+	const div = (2 * root2)
 	if (div == 0)
 		return Infinity
 
 	const t1 = (-root - root1) / div
 	const t2 = ( root - root1) / div
 
-	return Math.min(t1, t2)
+	const t = Math.min(t1, t2)
+	//if (t < 0 || t > 1)
+	//	return Infinity
+
+	return t
 }
 
 
@@ -186,51 +181,11 @@ export function sweepSphereToPoint(
 	const t1 = 1 / div * (-Math.sqrt(root) - 2 * u * x - 2 * v * y - 2 * w * z)
 	const t2 = 1 / div * ( Math.sqrt(root) - 2 * u * x - 2 * v * y - 2 * w * z)
 
-	const tMin = Math.min(t1, t2)
-	if (tMin < 0 || tMin > 1)
-		return Infinity
+	const t = Math.min(t1, t2)
+	//if (t < 0 || t > 1)
+	//	return Infinity
 
-	return tMin
-
-
-
-
-	/*spherePos = spherePos.scale(1 / sphereRadius)
-	sphereSpeed = sphereSpeed.scale(1 / sphereRadius)
-	point = point.scale(1 / sphereRadius)
-
-	const a = sphereSpeed.dot(sphereSpeed)
-	const b = 2 * (sphereSpeed.dot(spherePos.sub(point)))
-	const c = point.sub(spherePos).magnSqr() - 1
-
-	const t = solveQuadratic(a, b, c)
-	if (t === null)
-		return t
-
-	return t * sphereRadius*/
-}
-
-
-export function solveQuadratic(a: number, b: number, c: number): number | null
-{
-	const det = b * b - 4 * a * c
-	if (det < 0)
-		return null
-
-	const sqrtDet = Math.sqrt(det)
-	const x1 = (-b - sqrtDet) / 2 * a
-	const x2 = (-b + sqrtDet) / 2 * a
-
-	const xMin = Math.min(x1, x2)
-	const xMax = Math.max(x1, x2)
-
-	if (xMin > 0)
-		return xMin
-
-	if (xMax > 0)
-		return xMax
-
-	return null
+	return t
 }
 
 

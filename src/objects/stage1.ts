@@ -15,20 +15,21 @@ export class Stage1 extends Object
     init()
     {
         const builder = new ModelBuilder()
-        /*builder.addQuad(
+        builder.addQuad(
             new Vec3(-10, -10, 0),
             new Vec3( 10, -10, 0),
             new Vec3( 10,  10, 0),
             new Vec3(-10,  10, 0))
         builder.addCube(-5, -5, -1, -2, -2, 1)
+        builder.addCube(-7, -5, -2, -5, -2, 1)
         builder.addQuad(
             new Vec3(-2, -5, -1),
             new Vec3( 0, -5, 0),
             new Vec3( 0, -2, 0),
-            new Vec3(-2, -2, -1))*/
+            new Vec3(-2, -2, -1))
 
         builder.addTri(
-            new Vec3( 0, -1, -0.5),
+            new Vec3( 0, -2, -0.5),
             new Vec3( 2, -1, -0.75),
             new Vec3( 1,  2, -0.5))
         builder.calculateNormals()

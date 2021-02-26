@@ -4,6 +4,7 @@ import ModelBuilder from "../util/modelBuilder"
 import Vec3 from "../math/vec3"
 import Mat4 from "../math/mat4"
 import { Player } from "./player"
+import { Test } from "./test"
 
 
 export class Camera extends Object
@@ -38,11 +39,14 @@ export class Camera extends Object
 
     process()
     {
-        const player = this.director.objectFind(Player)
-        if (!player)
-            return
+        let target: any = this.director.objectFind(Player)
+        if (!target)
+            target = this.director.objectFind(Test)
 
-        this.lookAt = player.position
+        if (!target)
+            return
+            
+        this.lookAt = target.position
 
         const speed = 0.5
         const goalDistance = 5
