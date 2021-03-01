@@ -15,6 +15,8 @@ export class Player extends Object
     speed: Vec3 = new Vec3(0, 0, 0)
     radius: number = 0.15
 
+    collisionPos: Vec3 = new Vec3(0, 0, 0)
+
 
     init()
     {
@@ -35,8 +37,6 @@ export class Player extends Object
     {
         this.handleMovement()
         this.handleJump()
-
-        this.position = this.position.add(this.speed)
 
         this.handleCollision()
         
@@ -115,26 +115,39 @@ export class Player extends Object
         if (!stage)
             return
 
-        const solved = stage.collision.collideAndSlide(
-            this.posPrev,
+        this.collisionPos = this.position
+
+        const solvedGravity = stage.collision.repel(
             this.position,
+            this.position.add(new Vec3(0, 0, this.speed.z)),
+            this.radius)
+
+        this.position = solvedGravity.position
+        this.speed = this.speed.withZ(this.position.z - this.posPrev.z)
+
+        const solved = stage.collision.repelAndSlide(
+            this.position,
+            this.position.add(this.speed.withZ(0)),
             this.radius)
 
         this.position = solved.position
-
-        this.speed = this.speed.withZ(this.position.z - this.posPrev.z)
     }
 
 
     render()
     {
         this.director.scene.pushTranslationScale(this.position, this.scale)
-
         this.director.scene.drawModel(
             this.model,
             this.director.scene.materialColor,
             [1, 1, 1, 1])
-
         this.director.scene.popTranslationScale()
+        
+        /*this.director.scene.pushTranslationScale(this.collisionPos, this.scale)
+        this.director.scene.drawModel(
+            this.model,
+            this.director.scene.materialColor,
+            [1, 0, 0, 1])
+        this.director.scene.popTranslationScale()*/
     }
 }

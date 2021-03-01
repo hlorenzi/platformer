@@ -30,6 +30,13 @@ interface Resolution
 }
 
 
+interface RepelResolution
+{
+	position: Vec3
+	contact: Vec3
+}
+
+
 interface SolveResult
 {
 	collided: boolean
@@ -83,6 +90,34 @@ export default class CollisionMesh
 	}
 
 
+	repelAndSlide(posPrev: Vec3, pos: Vec3, radius: number): SolveResult
+	{
+		let contact = pos
+		let collided = false
+
+		for (let i = 0; i < 3; i++)
+		{
+			const solved = this.repel(posPrev, pos, radius)
+			posPrev = solved.position
+
+			if (!solved.collided)
+				break
+
+			collided = true
+			contact = solved.contact
+
+			const slideVec = pos.sub(solved.position).projectOnPlane(solved.position.sub(solved.contact))
+			pos = posPrev.add(slideVec)
+		}
+
+		return {
+			position: posPrev,
+			contact,
+			collided,
+		}
+	}
+
+
 	collideAndSlide(posPrev: Vec3, pos: Vec3, radius: number): SolveResult
 	{
 		let contact = pos
@@ -112,6 +147,34 @@ export default class CollisionMesh
 	}
 
 
+	repel(posPrev: Vec3, pos: Vec3, radius: number): SolveResult
+	{
+		let solvedPos = pos
+		let contact = pos
+		let collided = false
+
+		for (const tri of this.triangles)
+		{
+			const triSolved = this.repelTriangle(tri, posPrev, pos, radius)
+			if (!triSolved)
+				continue
+
+			if (pos.sub(triSolved.position).magnSqr() > pos.sub(solvedPos).magnSqr())
+			{
+				solvedPos = triSolved.position
+				contact = triSolved.contact
+				collided = true
+			}
+		}
+
+		return {
+			position: solvedPos,
+			contact,
+			collided,
+		}
+	}
+
+
 	collide(posPrev: Vec3, pos: Vec3, radius: number): SolveResult
 	{
 		let t = 1
@@ -134,6 +197,40 @@ export default class CollisionMesh
 			position: posPrev.add(pos.sub(posPrev).scale(t)),
 			contact,
 			collided: t < 1,
+		}
+	}
+
+
+	repelTriangle(tri: Triangle, posPrev: Vec3, pos: Vec3, radius: number): RepelResolution | null
+	{
+		const speed = pos.sub(posPrev)
+		const speedNorm = speed.normalized()
+		const sqrRadius = radius * radius
+
+		const sqrDistPlanePrev = posPrev.signedSqrDistanceToPlane(tri.normal, tri.v1)
+		if (sqrDistPlanePrev <= -sqrRadius)
+			return null
+
+		const sqrDistPlane = pos.signedSqrDistanceToPlane(tri.normal, tri.v1)
+		if (sqrDistPlane >= sqrRadius)
+			return null
+
+		const sqrDistEdge1 = pos.signedSqrDistanceToPlane(tri.v1to2.normalized().cross(speedNorm), tri.v1)
+		const sqrDistEdge2 = pos.signedSqrDistanceToPlane(tri.v2to3.normalized().cross(speedNorm), tri.v2)
+		const sqrDistEdge3 = pos.signedSqrDistanceToPlane(tri.v3to1.normalized().cross(speedNorm), tri.v3)
+		
+		if (sqrDistEdge1 >= sqrRadius || sqrDistEdge2 >= sqrRadius || sqrDistEdge3 >= sqrRadius)
+			return null
+
+		const repelledFromSpeed = speedNorm.scale(speed.magn() + radius)//Math.sqrt(Math.abs(sqrDistPlane)) + radius * 2)
+		const repelledFromPos = pos.sub(repelledFromSpeed)
+		const repelledCollision = this.collideTriangle(tri, repelledFromPos, repelledFromPos.add(repelledFromSpeed), radius)
+		if (!repelledCollision)
+			return null
+
+		return {
+			position: repelledFromPos.add(repelledFromSpeed.scale(repelledCollision.t).withAddedMagn(-radius * 0.01)),
+			contact: repelledCollision.contact,
 		}
 	}
 
@@ -174,10 +271,13 @@ export default class CollisionMesh
 
 		const t = Math.min(tPlane, tE1, tE2, tE3, tV1, tV2, tV3)
 
-		if (speedDotNormal >= 0 && (t < 0 || t > 1))
-			return null
+		//if (speedDotNormal >= 0 && (t < 0 || t > 1))
+		//	return null
 
-		if (speedDotNormal < 0 && (t < -0.5 || t > 1))
+		//if (speedDotNormal < 0 && (t < -0.5 || t > 1))
+		//	return null
+
+		if (t < 0 || t > 1)
 			return null
 
 		if (!isFinite(t))

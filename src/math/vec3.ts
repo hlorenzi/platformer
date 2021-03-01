@@ -37,6 +37,12 @@ export default class Vec3
 	}
 
 
+	withAddedMagn(t: number)
+	{
+		return this.normalized().scale(this.magn() + t)
+	}
+
+
 	normalized()
 	{
 		const magn = this.magn()
@@ -172,10 +178,17 @@ export default class Vec3
 	
 	directionToPlane(planeNormal: Vec3, pointOnPlane: Vec3)
 	{
-		const vec = this.sub(pointOnPlane)
-		const proj = vec.projectOnPlane(planeNormal)
-		
-		return proj.add(pointOnPlane)
+		const p = this.sub(pointOnPlane)
+		return p.sub(p.project(planeNormal)).add(pointOnPlane).sub(this)
+	}
+
+
+	signedSqrDistanceToPlane(planeNormal: Vec3, pointOnPlane: Vec3)
+	{
+		const distPlane = this.directionToPlane(planeNormal, pointOnPlane)
+		const dotPlane = this.sub(pointOnPlane).dot(planeNormal)
+
+		return distPlane.magnSqr() * Math.sign(dotPlane)
 	}
 	
 	

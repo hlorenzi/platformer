@@ -51,13 +51,14 @@ export class Test extends Object
 
         const forward = camera.lookAt.sub(camera.position).withZ(0).normalized()
         const sideways = new Vec3(forward.y, -forward.x, 0)
+        const up = new Vec3(0, 0, -1)
         const accel = 0.005
         const decel = 0.015
         const maxSpeed = 0.05
 
         let moveVec = new Vec3(0, 0, 0)
 
-        if (!this.director.keysHeld.has("q"))
+        if (!this.director.keysHeld.has("z"))
         {
             if (this.director.keysHeld.has("arrowup") ||
                 this.director.keysHeld.has("w"))
@@ -74,29 +75,32 @@ export class Test extends Object
             if (this.director.keysHeld.has("arrowright") ||
                 this.director.keysHeld.has("d"))
                 moveVec.x += 1
+                
+            if (this.director.keysHeld.has("q"))
+                moveVec.z -= 1
+                
+            if (this.director.keysHeld.has("e"))
+                moveVec.z += 1
         }
 
         moveVec = moveVec.normalized().scale(accel)
 
-        let groundSpeed = this.speed.withZ(0)
-
-        groundSpeed = groundSpeed
+        this.speed = this.speed
             .add(forward.scale(moveVec.y))
             .add(sideways.scale(moveVec.x))
+            .add(up.scale(moveVec.z))
 
-        const speedMagn = groundSpeed.withZ(0).magn()
+        const speedMagn = this.speed.magn()
         if (speedMagn > maxSpeed)
-            groundSpeed = groundSpeed.withZ(0).normalized().scale(maxSpeed)
+            this.speed = this.speed.normalized().scale(maxSpeed)
 
         if (moveVec.magn() == 0)
         {
             if (speedMagn > decel)
-                groundSpeed = groundSpeed.sub(groundSpeed.normalized().scale(decel))
+                this.speed = this.speed.sub(this.speed.normalized().scale(decel))
             else
-                groundSpeed = new Vec3(0, 0, groundSpeed.z)
+                this.speed = new Vec3(0, 0, 0)
         }
-
-        this.speed = this.speed.sub(this.speed.withZ(0)).add(groundSpeed)
     }
 
 
@@ -108,13 +112,14 @@ export class Test extends Object
 
         const forward = camera.lookAt.sub(camera.position).withZ(0).normalized()
         const sideways = new Vec3(forward.y, -forward.x, 0)
+        const up = new Vec3(0, 0, -1)
         const accel = 0.005
         const decel = 0.015
         const maxSpeed = 0.05
 
         let moveVec = new Vec3(0, 0, 0)
 
-        if (this.director.keysHeld.has("q"))
+        if (this.director.keysHeld.has("z"))
         {
             if (this.director.keysHeld.has("arrowup") ||
                 this.director.keysHeld.has("w"))
@@ -131,29 +136,32 @@ export class Test extends Object
             if (this.director.keysHeld.has("arrowright") ||
                 this.director.keysHeld.has("d"))
                 moveVec.x += 1
+                
+            if (this.director.keysHeld.has("q"))
+                moveVec.z -= 1
+                
+            if (this.director.keysHeld.has("e"))
+                moveVec.z += 1
         }
 
         moveVec = moveVec.normalized().scale(accel)
 
-        let groundSpeed = this.speed2.withZ(0)
-
-        groundSpeed = groundSpeed
+        this.speed2 = this.speed2
             .add(forward.scale(moveVec.y))
             .add(sideways.scale(moveVec.x))
+            .add(up.scale(moveVec.z))
 
-        const speedMagn = groundSpeed.withZ(0).magn()
+        const speedMagn = this.speed2.magn()
         if (speedMagn > maxSpeed)
-            groundSpeed = groundSpeed.withZ(0).normalized().scale(maxSpeed)
+            this.speed2 = this.speed2.normalized().scale(maxSpeed)
 
         if (moveVec.magn() == 0)
         {
             if (speedMagn > decel)
-                groundSpeed = groundSpeed.sub(groundSpeed.normalized().scale(decel))
+                this.speed2 = this.speed2.sub(this.speed2.normalized().scale(decel))
             else
-                groundSpeed = new Vec3(0, 0, groundSpeed.z)
+                this.speed2 = new Vec3(0, 0, 0)
         }
-
-        this.speed2 = this.speed2.sub(this.speed2.withZ(0)).add(groundSpeed)
     }
 
 
@@ -165,8 +173,9 @@ export class Test extends Object
 
         const fromPos = this.position
         const toPos = this.position2
-        const solved = stage.collision.collide(fromPos, toPos, this.radius)
-        const solvedSlide = stage.collision.collideAndSlide(fromPos, toPos, this.radius)
+        const solved = stage.collision.repel(fromPos, toPos, this.radius)
+        const solvedSlide = stage.collision.repelAndSlide(fromPos, toPos, this.radius)
+        const slide = this.position2.sub(solved.position).projectOnPlane(solved.position.sub(solved.contact))
         
         this.director.scene.pushTranslationScale(fromPos, this.scale)
         this.director.scene.drawModel(
@@ -208,11 +217,41 @@ export class Test extends Object
             0.025,
             [1, 0.5, 1, 1])
             
+        this.director.scene.drawArrow(
+            solved.position,
+            solved.position.add(solved.position.sub(solved.contact).scale(this.scale.x * 2)),
+            0.025,
+            [1, 0, 0, 1])
+
         this.director.scene.pushTranslationScale(solved.contact, new Vec3(0.25, 0.25, 0.25))
         this.director.scene.drawModel(
             this.model,
             this.director.scene.materialColor,
             [1, 0, 0, 1])
         this.director.scene.popTranslationScale()
+        
+        this.director.scene.pushTranslationScale(solved.position.add(slide), this.scale)
+        this.director.scene.drawModel(
+            this.model,
+            this.director.scene.materialColor,
+            [0, 1, 0, 1])
+        this.director.scene.popTranslationScale()
+        
+        this.director.scene.drawArrow(
+            solved.position,
+            solved.position.add(slide),
+            0.025,
+            [0, 1, 0, 1])
+
+        /*for (const tri of stage.collision.triangles)
+        {
+            const direction = this.position.directionToPlane(tri.normal, tri.v1)
+
+            this.director.scene.drawArrow(
+                this.position,
+                this.position.add(direction),
+                0.025,
+                [0, 1, 1, 1])
+        }*/
     }
 }
