@@ -32,6 +32,10 @@ export class Stage1 extends Object
             new Vec3( 0, -2, -0.5),
             new Vec3( 2, -1, -0.75),
             new Vec3( 1,  2, -0.5))
+        builder.addTri(
+            new Vec3( 2, -1, -0.75),
+            new Vec3( 2,  2, -0.25),
+            new Vec3( 1,  2, -0.5))
         builder.calculateNormals()
 
         this.model = builder.makeModel(this.director.gl)

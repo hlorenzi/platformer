@@ -175,7 +175,6 @@ export class Test extends Object
         const toPos = this.position2
         const solved = stage.collision.repel(fromPos, toPos, this.radius)
         const solvedSlide = stage.collision.repelAndSlide(fromPos, toPos, this.radius)
-        const slide = this.position2.sub(solved.position).projectOnPlane(solved.position.sub(solved.contact))
         
         this.director.scene.pushTranslationScale(fromPos, this.scale)
         this.director.scene.drawModel(
@@ -184,44 +183,19 @@ export class Test extends Object
             [1, 0, 0, 1])
         this.director.scene.popTranslationScale()
 
-        this.director.scene.pushTranslationScale(toPos, this.scale)
-        this.director.scene.drawModel(
-            this.model,
-            this.director.scene.materialColor,
-            [1, 0, 0.5, 1])
-        this.director.scene.popTranslationScale()
-
         this.director.scene.pushTranslationScale(solved.position, this.scale)
         this.director.scene.drawModel(
             this.model,
             this.director.scene.materialColor,
-            [1, 0, 1, 1])
+            [1, 0.5, 0, 1])
         this.director.scene.popTranslationScale()
-
-        this.director.scene.drawArrow(
-            fromPos,
-            toPos,
-            0.025,
-            [1, 0, 1, 1])
 
         this.director.scene.pushTranslationScale(solvedSlide.position, this.scale)
         this.director.scene.drawModel(
             this.model,
             this.director.scene.materialColor,
-            [1, 0.5, 1, 1])
+            [1, 1, 0, 1])
         this.director.scene.popTranslationScale()
-        
-        this.director.scene.drawArrow(
-            solved.position,
-            solvedSlide.position,
-            0.025,
-            [1, 0.5, 1, 1])
-            
-        this.director.scene.drawArrow(
-            solved.position,
-            solved.position.add(solved.position.sub(solved.contact).scale(this.scale.x * 2)),
-            0.025,
-            [1, 0, 0, 1])
 
         this.director.scene.pushTranslationScale(solved.contact, new Vec3(0.25, 0.25, 0.25))
         this.director.scene.drawModel(
@@ -229,8 +203,38 @@ export class Test extends Object
             this.director.scene.materialColor,
             [1, 0, 0, 1])
         this.director.scene.popTranslationScale()
+
+        this.director.scene.drawArrow(
+            fromPos,
+            toPos,
+            0.025,
+            [1, 0, 0, 1])
+
+            this.director.scene.drawArrow(
+            fromPos,
+            solvedSlide.position,
+            0.025,
+            [1, 0.5, 1, 1])
+
+        this.director.scene.drawArrow(
+            fromPos,
+            solvedSlide.position,
+            0.025,
+            [1, 1, 0, 1])
+                    
+        this.director.scene.drawArrow(
+            solved.position,
+            solvedSlide.position,
+            0.025,
+            [1, 1, 1, 1])
+            
+        this.director.scene.drawArrow(
+            solved.position,
+            solved.position.add(solved.position.sub(solved.contact).scale(this.scale.x * 2)),
+            0.025,
+            [1, 0, 0, 1])
         
-        this.director.scene.pushTranslationScale(solved.position.add(slide), this.scale)
+        /*this.director.scene.pushTranslationScale(solved.position.add(slide), this.scale)
         this.director.scene.drawModel(
             this.model,
             this.director.scene.materialColor,
@@ -243,7 +247,7 @@ export class Test extends Object
             0.025,
             [0, 1, 0, 1])
 
-        /*for (const tri of stage.collision.triangles)
+        for (const tri of stage.collision.triangles)
         {
             const direction = this.position.directionToPlane(tri.normal, tri.v1)
 

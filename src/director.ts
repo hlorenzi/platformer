@@ -80,6 +80,12 @@ export class Director
     }
 
 
+    objectDestroy(object: Object)
+    {
+        this.objects = this.objects.filter(obj => obj !== object)
+    }
+
+
     objectFind<T extends Object>(typ: new () => T)
     {
         for (const object of this.objects)
@@ -111,6 +117,29 @@ export class Director
         {
             if (!this.keysHeldPrev.has(key))
                 this.keysDown.add(key)
+        }
+
+        if (this.keysDown.has("t"))
+        {
+            const player = this.objectFind(Player)
+            const test = this.objectFind(Test)
+
+            if (player)
+            {
+                this.objectDestroy(player)
+
+                const newTest = new Test()
+                newTest.position = new Vec3(0, 0, -1.25)
+                this.objectAdd(newTest)
+            }
+            else if (test)
+            {
+                this.objectDestroy(test)
+
+                const newPlayer = new Player()
+                newPlayer.position = new Vec3(0, 0, -1.25)
+                this.objectAdd(newPlayer)
+            }
         }
 
         for (const object of this.objects)

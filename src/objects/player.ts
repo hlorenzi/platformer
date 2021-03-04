@@ -123,7 +123,10 @@ export class Player extends Object
             this.radius)
 
         this.position = solvedGravity.position
-        this.speed = this.speed.withZ(this.position.z - this.posPrev.z)
+
+        if (this.position.z <= this.posPrev.z &&
+            this.speed.z > 0)
+            this.speed = this.speed.withZ(0)
 
         const solved = stage.collision.repelAndSlide(
             this.position,

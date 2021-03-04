@@ -95,7 +95,7 @@ export default class CollisionMesh
 		let contact = pos
 		let collided = false
 
-		for (let i = 0; i < 3; i++)
+		for (let i = 0; i < 2; i++)
 		{
 			const solved = this.repel(posPrev, pos, radius)
 			posPrev = solved.position
@@ -150,6 +150,7 @@ export default class CollisionMesh
 	repel(posPrev: Vec3, pos: Vec3, radius: number): SolveResult
 	{
 		let solvedPos = pos
+		let solvedT = Infinity
 		let contact = pos
 		let collided = false
 
@@ -159,9 +160,12 @@ export default class CollisionMesh
 			if (!triSolved)
 				continue
 
-			if (pos.sub(triSolved.position).magnSqr() > pos.sub(solvedPos).magnSqr())
+			const triSolvedT = triSolved.position.sub(posPrev).projectT(pos.sub(posPrev))
+
+			if (triSolvedT < solvedT)
 			{
 				solvedPos = triSolved.position
+				solvedT = triSolvedT
 				contact = triSolved.contact
 				collided = true
 			}
@@ -215,6 +219,10 @@ export default class CollisionMesh
 		if (sqrDistPlane >= sqrRadius)
 			return null
 
+		//const sqrDistEdge1 = pos.signedSqrDistanceToPlane(tri.v1to2Normal, tri.v1)
+		//const sqrDistEdge2 = pos.signedSqrDistanceToPlane(tri.v2to3Normal, tri.v2)
+		//const sqrDistEdge3 = pos.signedSqrDistanceToPlane(tri.v3to1Normal, tri.v3)
+		
 		const sqrDistEdge1 = pos.signedSqrDistanceToPlane(tri.v1to2.normalized().cross(speedNorm), tri.v1)
 		const sqrDistEdge2 = pos.signedSqrDistanceToPlane(tri.v2to3.normalized().cross(speedNorm), tri.v2)
 		const sqrDistEdge3 = pos.signedSqrDistanceToPlane(tri.v3to1.normalized().cross(speedNorm), tri.v3)
@@ -222,14 +230,14 @@ export default class CollisionMesh
 		if (sqrDistEdge1 >= sqrRadius || sqrDistEdge2 >= sqrRadius || sqrDistEdge3 >= sqrRadius)
 			return null
 
-		const repelledFromSpeed = speedNorm.scale(speed.magn() + radius)//Math.sqrt(Math.abs(sqrDistPlane)) + radius * 2)
+		const repelledFromSpeed = speed//Math.sqrt(Math.abs(sqrDistPlane)) + radius * 2)
 		const repelledFromPos = pos.sub(repelledFromSpeed)
 		const repelledCollision = this.collideTriangle(tri, repelledFromPos, repelledFromPos.add(repelledFromSpeed), radius)
 		if (!repelledCollision)
 			return null
 
 		return {
-			position: repelledFromPos.add(repelledFromSpeed.scale(repelledCollision.t).withAddedMagn(-radius * 0.01)),
+			position: repelledFromPos.add(repelledFromSpeed.scale(repelledCollision.t).withAddedMagn(-radius * 0.05)),
 			contact: repelledCollision.contact,
 		}
 	}
