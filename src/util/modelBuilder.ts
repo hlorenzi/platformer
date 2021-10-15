@@ -453,6 +453,7 @@ export default class ModelBuilder
 		for (let i = 0; i < this.positions.length; i += 3)
 			col.addTri(this.positions[i + 0], this.positions[i + 1], this.positions[i + 2])
 		
+		col.build()
 		return col
 	}
 }

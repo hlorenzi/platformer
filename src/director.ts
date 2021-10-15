@@ -2,10 +2,13 @@ import { Scene } from "./gl/scene"
 import Mat4 from "./math/mat4"
 import Vec3 from "./math/vec3"
 import { Object } from "./objects/_object"
+import { Kart } from "./objects/kart"
 import { Player } from "./objects/player"
 import { Camera } from "./objects/camera"
 import { Stage1 } from "./objects/stage1"
 import { Test } from "./objects/test"
+import { ObjLoader } from "./util/objLoader"
+import { Stage } from "./objects/stage"
 
 
 export class Director
@@ -52,19 +55,23 @@ export class Director
     }
 
 
-    init()
+    async init()
     {
+        const trackFile = await fetch("assets/track.obj").then(t => t.arrayBuffer())
+        const trackModel = ObjLoader.makeModelBuilder(trackFile)
+
         this.objects = []
 
-        const player = new Player()
-        player.position = new Vec3(0, 0, -1.25)
+        const player = new Kart()
         this.objectAdd(player)
 
         const camera = new Camera()
         camera.position = new Vec3(2, 4, -4)
         this.objectAdd(camera)
 
-        this.objectAdd(new Stage1())
+        const stage = new Stage()
+        stage.setModel(this.gl, trackModel)
+        this.objectAdd(stage)
 
         const test = new Test()
         test.position = new Vec3(0, 0, -1.25)
@@ -121,10 +128,19 @@ export class Director
 
         if (this.keysDown.has("t"))
         {
+            const kart = this.objectFind(Kart)
             const player = this.objectFind(Player)
             const test = this.objectFind(Test)
 
-            if (player)
+            if (kart)
+            {
+                this.objectDestroy(kart)
+
+                const newPlayer = new Player()
+                newPlayer.position = new Vec3(0, 0, -1.25)
+                this.objectAdd(newPlayer)
+            }
+            else if (player)
             {
                 this.objectDestroy(player)
 
@@ -136,9 +152,8 @@ export class Director
             {
                 this.objectDestroy(test)
 
-                const newPlayer = new Player()
-                newPlayer.position = new Vec3(0, 0, -1.25)
-                this.objectAdd(newPlayer)
+                const newKart = new Kart()
+                this.objectAdd(newKart)
             }
         }
 

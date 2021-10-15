@@ -45,14 +45,37 @@ interface SolveResult
 }
 
 
+const buckets = 50
+
+
+interface BucketIndex
+{
+	x: number
+	y: number
+}
+
+
 export default class CollisionMesh
 {
 	triangles: Triangle[]
+	triangleBuckets: Triangle[][][]
+
+	xMin: number = 0
+	xMax: number = 0
+	yMin: number = 0
+	yMax: number = 0
 
 
 	constructor()
 	{
 		this.triangles = []
+		this.triangleBuckets = []
+		for (let j = 0; j < buckets; j++)
+		{
+			this.triangleBuckets.push([])
+			for (let i = 0; i < buckets; i++)
+				this.triangleBuckets[j].push([])
+		}
 	}
 	
 	
@@ -87,6 +110,66 @@ export default class CollisionMesh
 		}
 
 		this.triangles.push(tri)
+
+		this.xMin = Math.min(this.xMin, v1.x, v2.x, v3.x)
+		this.xMax = Math.max(this.xMax, v1.x, v2.x, v3.x)
+		this.yMin = Math.min(this.yMin, v1.y, v2.y, v3.y)
+		this.yMax = Math.max(this.yMax, v1.y, v2.y, v3.y)
+	}
+
+
+	build()
+	{
+		for (const tri of this.triangles)
+		{
+			this.addToNearBuckets(tri, this.bucketForPosition(tri.v1))
+			this.addToNearBuckets(tri, this.bucketForPosition(tri.v2))
+			this.addToNearBuckets(tri, this.bucketForPosition(tri.v3))
+		}
+	}
+
+
+	addToNearBuckets(tri: Triangle, bucketIndex: BucketIndex)
+	{
+		this.addToBucket(tri, bucketIndex)
+		this.addToBucket(tri, { x: bucketIndex.x - 1, y: bucketIndex.y })
+		this.addToBucket(tri, { x: bucketIndex.x + 1, y: bucketIndex.y })
+		this.addToBucket(tri, { x: bucketIndex.x - 1, y: bucketIndex.y - 1 })
+		this.addToBucket(tri, { x: bucketIndex.x + 0, y: bucketIndex.y - 1 })
+		this.addToBucket(tri, { x: bucketIndex.x + 1, y: bucketIndex.y - 1 })
+		this.addToBucket(tri, { x: bucketIndex.x - 1, y: bucketIndex.y + 1 })
+		this.addToBucket(tri, { x: bucketIndex.x + 0, y: bucketIndex.y + 1 })
+		this.addToBucket(tri, { x: bucketIndex.x + 1, y: bucketIndex.y + 1 })
+	}
+
+
+	addToBucket(tri: Triangle, bucketIndex: BucketIndex)
+	{
+		if (bucketIndex.x < 0 || bucketIndex.x >= buckets)
+			return
+			
+		if (bucketIndex.y < 0 || bucketIndex.y >= buckets)
+			return
+
+		const bucket = this.triangleBuckets[bucketIndex.y][bucketIndex.x]
+		if (!bucket.find(t => t === tri))
+			bucket.push(tri)
+	}
+
+
+	bucketForPosition(pos: Vec3): BucketIndex
+	{
+		const x = Math.max(0, Math.floor((pos.x - this.xMin) / (this.xMax - this.xMin) * buckets) % buckets)
+		const y = Math.max(0, Math.floor((pos.y - this.yMin) / (this.yMax - this.yMin) * buckets) % buckets)
+		return { x, y }
+	}
+
+
+	*enumerateTrianglesByBuckets(pos: Vec3): Generator<Triangle, void, void>
+	{
+		const bucketIndex = this.bucketForPosition(pos)
+		for (const tri of this.triangleBuckets[bucketIndex.y][bucketIndex.x])
+			yield tri
 	}
 
 
@@ -154,7 +237,7 @@ export default class CollisionMesh
 		let contact = pos
 		let collided = false
 
-		for (const tri of this.triangles)
+		for (const tri of this.enumerateTrianglesByBuckets(pos))
 		{
 			const triSolved = this.repelTriangle(tri, posPrev, pos, radius)
 			if (!triSolved)
@@ -237,7 +320,7 @@ export default class CollisionMesh
 			return null
 
 		return {
-			position: repelledFromPos.add(repelledFromSpeed.scale(repelledCollision.t).withAddedMagn(-radius * 0.05)),
+			position: repelledFromPos.add(repelledFromSpeed.scale(repelledCollision.t).withAddedMagn(-radius * 0.01)),
 			contact: repelledCollision.contact,
 		}
 	}

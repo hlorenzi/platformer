@@ -8,7 +8,8 @@
   "type": "module",
   "scripts": {
     "build": "webpack --config webpack.config.cjs",
-    "watch": "webpack --config webpack.config.cjs --watch --mode development"
+    "dev": "webpack --config webpack.config.cjs --watch --mode development",
+    "start": "http-server -p 80"
   },
   "browserslist": [
     "> 2%",

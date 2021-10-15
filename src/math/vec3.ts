@@ -37,6 +37,12 @@ export default class Vec3
 	}
 
 
+	withMagn(magn: number)
+	{
+		return this.normalized().scale(magn)
+	}
+
+
 	withAddedMagn(t: number)
 	{
 		return this.normalized().scale(this.magn() + t)
