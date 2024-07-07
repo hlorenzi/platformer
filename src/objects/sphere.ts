@@ -98,7 +98,7 @@ export class Sphere
     {
         this.director.scene.pushTranslationScale(
             this.pos,
-            new Vec3(this.radius, this.radius, this.radius))
+            new Vec3(this.radius, this.radius, this.radius).scale(0.5))
             
         this.director.scene.drawModel(
             this.model,

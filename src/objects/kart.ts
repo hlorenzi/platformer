@@ -54,6 +54,9 @@ export class Kart extends Object
 			new Sphere(),
 			new Sphere(),
 			new Sphere(),
+
+            new Sphere(),
+            new Sphere(),
 		]
 
         for (const body of this.bodies)
@@ -67,50 +70,71 @@ export class Kart extends Object
 
     reset()
     {
-        const bodyForwardLen = 0.5
-        const bodySideLen = 0.25
-        const bodyCrossLen = Math.sqrt(bodyForwardLen * bodyForwardLen + bodySideLen * bodySideLen)
-        const sphereRadius = 0.15
+        const bodyForwardLen = 0.25
+        const bodySideLen = 0.125
+        const chassiHeight = -0.15
+        const wheelRadius = 0.15
         const pos = new Vec3(50, 50, -15)
 	
 		this.bodies[0].id = 0
 		this.bodies[1].id = 1
 		this.bodies[2].id = 2
 		this.bodies[3].id = 3
+		this.bodies[4].id = 4
+		this.bodies[5].id = 5
 		
-		this.bodies[0].pos = pos.add(new Vec3(1, 0, 0))
-		this.bodies[1].pos = pos.add(new Vec3(1, 1, 0))
-		this.bodies[2].pos = pos.add(new Vec3(0, 1, 0))
-		this.bodies[3].pos = pos.add(new Vec3(0, 0, 0))
+		this.bodies[0].pos = pos.add(new Vec3(-bodyForwardLen, -bodySideLen, 0))
+		this.bodies[1].pos = pos.add(new Vec3(-bodyForwardLen, bodySideLen, 0))
+		this.bodies[2].pos = pos.add(new Vec3(bodyForwardLen, bodySideLen, 0))
+		this.bodies[3].pos = pos.add(new Vec3(bodyForwardLen, -bodySideLen, 0))
+		this.bodies[4].pos = pos.add(new Vec3(0, 0, 0))
+		this.bodies[5].pos = pos.add(new Vec3(0, 0, chassiHeight))
 		
 		this.bodies[0].speed = new Vec3(0, 0, 0)
 		this.bodies[1].speed = new Vec3(0, 0, 0)
 		this.bodies[2].speed = new Vec3(0, 0, 0)
 		this.bodies[3].speed = new Vec3(0, 0, 0)
+		this.bodies[4].speed = new Vec3(0, 0, 0)
+		this.bodies[5].speed = new Vec3(0, 0, 0)
 		
-		this.bodies[0].radius = sphereRadius
-		this.bodies[1].radius = sphereRadius
-		this.bodies[2].radius = sphereRadius
-		this.bodies[3].radius = sphereRadius
+		this.bodies[0].radius = wheelRadius
+		this.bodies[1].radius = wheelRadius
+		this.bodies[2].radius = wheelRadius
+		this.bodies[3].radius = wheelRadius
+		this.bodies[4].radius = wheelRadius
+		this.bodies[5].radius = wheelRadius
+
+        const addJoint = (body1: Sphere, body2: Sphere, tensionK: number, frictionK: number) => {
+            this.joints.push({
+                body1,
+                body2,
+                length: body1.pos.sub(body2.pos).magn(),
+                tensionK,
+                frictionK,
+            })
+        }
 		
-		this.joints =
-		[
-			// Outer Edges
-			{ body1: this.bodies[0], body2: this.bodies[1],
-                length: bodySideLen, tensionK: 0.1, frictionK: 0.1 },
-			{ body1: this.bodies[2], body2: this.bodies[3],
-                length: bodySideLen, tensionK: 0.1, frictionK: 0.1 },
-			{ body1: this.bodies[0], body2: this.bodies[3],
-                length: bodyForwardLen, tensionK: 0.1, frictionK: 0.1 },
-			{ body1: this.bodies[1], body2: this.bodies[2],
-                length: bodyForwardLen, tensionK: 0.1, frictionK: 0.1 },
-			
-			// Crossing
-			{ body1: this.bodies[0], body2: this.bodies[2],
-                length: bodyCrossLen, tensionK: 0.25, frictionK: 0.1 },
-			{ body1: this.bodies[1], body2: this.bodies[3],
-                length: bodyCrossLen, tensionK: 0.25, frictionK: 0.1 },
-		]
+        this.joints = []
+
+        const tensionK = 0.5
+        const frictionK = 0.05
+
+        // Outer Edges
+        addJoint(this.bodies[0], this.bodies[1], tensionK, frictionK)
+        addJoint(this.bodies[2], this.bodies[3], tensionK, frictionK)
+        addJoint(this.bodies[0], this.bodies[3], tensionK, frictionK)
+        addJoint(this.bodies[1], this.bodies[2], tensionK, frictionK)
+        
+		// Chassi
+        addJoint(this.bodies[0], this.bodies[4], tensionK, frictionK)
+        addJoint(this.bodies[1], this.bodies[4], tensionK, frictionK)
+        addJoint(this.bodies[2], this.bodies[4], tensionK, frictionK)
+        addJoint(this.bodies[3], this.bodies[4], tensionK, frictionK)
+        addJoint(this.bodies[0], this.bodies[5], tensionK, frictionK)
+        addJoint(this.bodies[1], this.bodies[5], tensionK, frictionK)
+        addJoint(this.bodies[2], this.bodies[5], tensionK, frictionK)
+        addJoint(this.bodies[3], this.bodies[5], tensionK, frictionK)
+        addJoint(this.bodies[4], this.bodies[5], tensionK, frictionK)
     }
 
 
@@ -244,6 +268,15 @@ export class Kart extends Object
     {
         for (const body of this.bodies)
             body.render()
+
+        for (const joint of this.joints)
+        {
+            this.director.scene.drawArrow(
+                joint.body1.pos,
+                joint.body2.pos,
+                0.025,
+                [1, 1, 1, 1])
+        }
             
         /*this.director.scene.drawArrow(
             this.center,
