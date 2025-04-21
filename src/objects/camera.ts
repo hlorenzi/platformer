@@ -3,6 +3,7 @@ import { Object } from "./_object"
 import ModelBuilder from "../util/modelBuilder"
 import Vec3 from "../math/vec3"
 import Mat4 from "../math/mat4"
+import { Stage } from "./stage"
 import { Kart } from "./kart"
 import { Player } from "./player"
 import { Test } from "./test"
@@ -51,10 +52,23 @@ export class Camera extends Object
 
         if (target instanceof Kart)
         {
-            this.lookAt = target.center.add(new Vec3(0, 0, -0.5))
+            this.lookAt = target.center.add(new Vec3(0, 0, -1))
             this.position = target.center
                 .sub(target.forward.withZ(0).normalized().scale(5))
                 .add(new Vec3(0, 0, -1.5))
+
+            const stage = this.director.objectFind(Stage)
+            if (stage)
+            {
+                const collision = stage.collision.collide(
+                    this.position.add(new Vec3(0, 0, -10)),
+                    this.position,
+                    0.1)
+
+                if (collision.collided)
+                    this.position = collision.position
+            }
+
             /*this.position = target.center
                 .sub(target.forward.normalized().scale(5))
                 .add(target.up.normalized().scale(1.5))*/
